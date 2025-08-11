@@ -40,4 +40,19 @@ export function getUsernameLimiter(): Limiter {
   });
 }
 
+export function getGlobalLimiter(): Limiter {
+  const hasRedis =
+    Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
+    Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
+  if (!hasRedis) return createNoopLimiter();
+
+  return new Ratelimit({
+    redis: getRedis(),
+    // Global budget across all callers, cache misses only
+    limiter: Ratelimit.slidingWindow(300, "10 m"),
+    analytics: true,
+    prefix: "rl:global",
+  });
+}
+
 

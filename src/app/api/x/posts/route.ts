@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getXReadOnlyClient } from "@/lib/xClient";
 import { getRedis } from "@/lib/redis";
-import { getIpLimiter, getUsernameLimiter } from "@/lib/ratelimit";
+import { getGlobalLimiter, getIpLimiter, getUsernameLimiter } from "@/lib/ratelimit";
 import { ApiResponseError } from "twitter-api-v2";
 
 // GET /api/x/posts?username=:handle&max_results=25
@@ -35,11 +35,6 @@ export async function GET(request: NextRequest) {
       const raw = await redis.get(cacheKey);
       if (raw) {
         const body = typeof raw === "string" ? raw : JSON.stringify(raw);
-        try {
-          if (redis) {
-            await redis.set(cacheKey, body, { ex: 60 * 60 });
-          }
-        } catch {}
         return new Response(body, {
           status: 200,
           headers: {
@@ -49,6 +44,13 @@ export async function GET(request: NextRequest) {
           },
         });
       }
+    }
+    // Fail closed if Redis not configured (avoid operating without rate limits/caching)
+    if (!hasRedis && process.env.NODE_ENV === "production") {
+      return new Response(
+        JSON.stringify({ error: "Service unavailable: caching and rate limits disabled" }),
+        { status: 503, headers: { "content-type": "application/json", "cache-control": "private, no-store" } }
+      );
     }
 
     // 2) Basic per-IP rate limit (only applies to cache misses)
@@ -90,6 +92,15 @@ export async function GET(request: NextRequest) {
         headers: { "content-type": "application/json", "cache-control": "private, no-store" },
       });
     }
+    // 4) Global limiter to cap upstream calls overall
+    const globalLimit = await getGlobalLimiter().limit("global");
+    if (!globalLimit.success) {
+      return new Response(JSON.stringify({ error: "Too many requests (service busy)" }), {
+        status: 429,
+        headers: { "content-type": "application/json", "cache-control": "private, no-store" },
+      });
+    }
+
     const client = getXReadOnlyClient();
 
     // Lookup user by username to get user id

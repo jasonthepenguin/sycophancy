@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getXReadOnlyClient } from "@/lib/xClient";
 import { getRedis } from "@/lib/redis";
-import { getIpLimiter, getUsernameLimiter } from "@/lib/ratelimit";
+import { getGlobalLimiter, getIpLimiter, getUsernameLimiter } from "@/lib/ratelimit";
 import { ApiResponseError } from "twitter-api-v2";
 
 // GET /api/x/profile?username=:handle
@@ -32,11 +32,6 @@ export async function GET(request: NextRequest) {
       const cached = await redis.get(cacheKey);
       if (cached) {
         const body = typeof cached === "string" ? cached : JSON.stringify(cached);
-        try {
-          if (redis) {
-            await redis.set(cacheKey, body, { ex: 60 * 60 });
-          }
-        } catch {}
         return new Response(body, {
           status: 200,
           headers: {
@@ -46,6 +41,13 @@ export async function GET(request: NextRequest) {
           },
         });
       }
+    }
+    // Fail closed if Redis not configured (avoid operating without rate limits/caching)
+    if (!hasRedis && process.env.NODE_ENV === "production") {
+      return new Response(
+        JSON.stringify({ error: "Service unavailable: caching and rate limits disabled" }),
+        { status: 503, headers: { "content-type": "application/json", "cache-control": "private, no-store" } }
+      );
     }
 
     // Rate limits only on cache miss
@@ -83,6 +85,15 @@ export async function GET(request: NextRequest) {
     }
 
     const client = getXReadOnlyClient();
+    // Global limiter to cap upstream calls overall
+    const globalLimit = await getGlobalLimiter().limit("global");
+    if (!globalLimit.success) {
+      return new Response(JSON.stringify({ error: "Too many requests (service busy)" }), {
+        status: 429,
+        headers: { "content-type": "application/json", "cache-control": "private, no-store" },
+      });
+    }
+
     const resp = await client.v2.userByUsername(handle, {
       "user.fields": [
         "id",

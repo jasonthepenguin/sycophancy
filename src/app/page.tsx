@@ -108,7 +108,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-6 -mt-8 sm:-mt-12">
-      <h1 className="text-2xl sm:text-3xl font-semibold">Voids Thought Test - IQ Checker</h1>
+      <h1 className="text-2xl sm:text-3xl font-semibold">Voids Thought Test</h1>
 
       {/* Bell Curve Chart */}
       <div className="w-full max-w-3xl">
@@ -233,7 +233,7 @@ export default function Home() {
       <div className="w-full max-w-md flex items-center gap-2">
         <input
           className="flex-1 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-          placeholder="Enter X username (e.g. @jack)"
+          placeholder="Enter X username (e.g. @sama)"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           onKeyDown={(e) => {

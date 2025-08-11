@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #030014; /* deep cosmic navy */
+  --foreground: #e6e6f0; /* soft starlight */
 }
 
 @theme inline {
@@ -14,13 +14,57 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #030014;
+    --foreground: #e6e6f0;
   }
 }
 
 body {
-  background: var(--background);
+  position: relative;
+  background-color: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  isolation: isolate; /* ensure pseudo-element can sit behind */
+  /* cosmic gradient + subtle star layers */
+  background-image:
+    radial-gradient(1200px 700px at 80% -10%, rgba(88, 28, 135, 0.28), transparent 60%),
+    radial-gradient(900px 600px at -10% 10%, rgba(30, 27, 75, 0.42), transparent 60%),
+    radial-gradient(1000px 650px at 50% 120%, rgba(8, 145, 178, 0.18), transparent 60%),
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(1px 1px at 260px 160px, rgba(255, 255, 255, 0.45), transparent 60%);
+  background-size:
+    auto,
+    auto,
+    auto,
+    400px 400px,
+    500px 500px,
+    600px 600px;
+  background-attachment: fixed, fixed, fixed, fixed, fixed, fixed;
+}
+
+/* twinkling starfield overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1px 1px at 10px 10px, rgba(255, 255, 255, 0.6), transparent 55%) 0 0 / 220px 220px repeat,
+    radial-gradient(1px 1px at 150px 80px, rgba(255, 255, 255, 0.4), transparent 55%) 0 0 / 320px 320px repeat,
+    radial-gradient(1.5px 1.5px at 40px 50px, rgba(255, 255, 255, 0.35), transparent 55%) 0 0 / 520px 520px repeat;
+  opacity: 0.35;
+  animation: twinkle 9s ease-in-out infinite alternate;
+  z-index: 0; /* ::before paints behind content, keep visible while non-interactive */
+}
+
+@keyframes twinkle {
+  0% {
+    opacity: 0.25;
+    transform: translateY(0px);
+  }
+  100% {
+    opacity: 0.45;
+    transform: translateY(-8px);
+  }
 }

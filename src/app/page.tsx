@@ -107,23 +107,32 @@ export default function Home() {
   }, [username]);
 
   return (
-    <div className="min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-6 -mt-8 sm:-mt-12">
-      <h1 className="text-2xl sm:text-3xl font-semibold">Voids Thought Test</h1>
+    <div className="relative z-10 min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-6 -mt-8 sm:-mt-12">
+      <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-cyan-300 drop-shadow-[0_0_12px_rgba(99,102,241,0.35)]">
+        Voids Thought Test
+      </h1>
 
       {/* Bell Curve Chart */}
       <div className="w-full max-w-3xl">
-        <div className="relative w-full rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+        <div className="relative w-full rounded-xl border border-indigo-500/20 bg-white/5 backdrop-blur-md shadow-[0_0_0_1px_rgba(99,102,241,0.08),0_20px_60px_-15px_rgba(0,0,0,0.6)]">
           <div className="relative w-full" style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}>
             <svg
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
               preserveAspectRatio="none"
-              className="absolute inset-0 h-full w-full"
+              className="absolute inset-0 h-full w-full text-indigo-200/60"
             >
               <defs>
                 <linearGradient id="curveGradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#6366F1" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#6366F1" stopOpacity="0.02" />
+                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.05" />
                 </linearGradient>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
               </defs>
 
               {/* Baseline */}
@@ -133,7 +142,7 @@ export default function Home() {
                 x2={WIDTH - MARGIN.right}
                 y2={baselineY}
                 stroke="currentColor"
-                strokeOpacity={0.15}
+                strokeOpacity={0.2}
               />
 
               {/* Ticks */}
@@ -147,13 +156,13 @@ export default function Home() {
                       x2={tx}
                       y2={baselineY + 6}
                       stroke="currentColor"
-                      strokeOpacity={0.25}
+                      strokeOpacity={0.3}
                     />
                     <text
                       x={tx}
                       y={baselineY + 20}
                       textAnchor="middle"
-                       className="fill-gray-500 text-[24px] sm:text-[18px]"
+                       className="fill-indigo-200/80 text-[24px] sm:text-[18px]"
                     >
                       {t}
                     </text>
@@ -167,8 +176,8 @@ export default function Home() {
                 y1={chartTopY}
                 x2={MARGIN.left + ((100 - IQ_MIN) / IQ_RANGE) * plotWidth}
                 y2={baselineY}
-                stroke="#6366F1"
-                strokeOpacity={0.4}
+                stroke="#818cf8"
+                strokeOpacity={0.6}
                 strokeDasharray="4 4"
               />
 
@@ -180,7 +189,7 @@ export default function Home() {
               />
 
               {/* Curve stroke */}
-              <path d={curvePath} fill="none" stroke="#6366F1" strokeWidth={2} />
+              <path d={curvePath} fill="none" stroke="#a78bfa" strokeWidth={2} filter="url(#glow)" />
             </svg>
 
             {/* Avatar marker overlay */}
@@ -194,7 +203,7 @@ export default function Home() {
                     transform: "translate(-50%, -50%)",
                   }}
                 >
-                  <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full ring-2 ring-indigo-600 overflow-hidden shadow-md">
+                  <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full ring-2 ring-fuchsia-400/70 overflow-hidden shadow-[0_0_20px_rgba(232,121,249,0.35)]">
                     <Image
                       src={profile.profile_image_url.replace("_normal", "_400x400")}
                       alt={profile.username}
@@ -203,7 +212,7 @@ export default function Home() {
                       className="object-cover"
                     />
                   </div>
-                  <div className="mt-1 text-[10px] sm:text-xs font-medium text-gray-800 dark:text-gray-100 bg-white/80 dark:bg-black/40 px-1.5 py-0.5 rounded">
+                  <div className="mt-1 text-[10px] sm:text-xs font-medium text-cyan-100 bg-black/50 backdrop-blur px-1.5 py-0.5 rounded border border-cyan-300/20 shadow-[0_0_16px_rgba(34,211,238,0.25)]">
                     IQ {iq}
                   </div>
                 </div>
@@ -215,16 +224,16 @@ export default function Home() {
 
       {profile && iq !== null && (
         <div className="w-full max-w-3xl text-center mt-2">
-          <p className="text-base sm:text-lg">
+          <p className="text-base sm:text-lg text-indigo-100/90">
             <a
               href={`https://x.com/${profile.username}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-indigo-600 hover:text-indigo-700 underline underline-offset-2"
+              className="font-semibold text-fuchsia-300 hover:text-fuchsia-200 underline underline-offset-2"
             >
               @{profile.username}
             </a>
-            , Your IQ: <span className="font-semibold text-indigo-600">{iq}</span>
+            , Your IQ: <span className="font-semibold text-cyan-300">{iq}</span>
           </p>
         </div>
       )}
@@ -232,7 +241,7 @@ export default function Home() {
       {/* Input */}
       <div className="w-full max-w-md flex items-center gap-2">
         <input
-          className="flex-1 rounded-md border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+          className="flex-1 rounded-md border border-indigo-500/20 bg-white/5 text-indigo-50 placeholder:text-indigo-200/40 px-3 py-2 outline-none backdrop-blur focus:ring-2 focus:ring-fuchsia-400/50 focus:border-fuchsia-400/40"
           placeholder="Enter X username (e.g. @sama)"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -243,14 +252,14 @@ export default function Home() {
         <button
           onClick={onFetch}
           disabled={loading || !username.trim()}
-          className="rounded-md bg-indigo-600 text-white px-4 py-2 disabled:opacity-50"
+          className="rounded-md bg-gradient-to-r from-fuchsia-500 via-indigo-600 to-cyan-500 text-white px-4 py-2 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] hover:brightness-110 disabled:opacity-50 disabled:grayscale transition"
         >
           {loading ? "Loading..." : "Plot"}
         </button>
       </div>
 
       {error && (
-        <div className="text-sm text-red-600 dark:text-red-400">{error}</div>
+        <div className="text-sm text-rose-300">{error}</div>
       )}
     </div>
   );

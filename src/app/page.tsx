@@ -142,7 +142,7 @@ export default function Home() {
         Voids Thought Test
       </h1>
       <div className="mt-1 text-white">
-        <span className="text-sm sm:text-base">Check the IQ score of any X user.</span>
+        <span className="text-sm sm:text-base">Check the IQ of any X user.</span>
       </div>
 
       {isVoidMode && (
@@ -325,6 +325,49 @@ export default function Home() {
       {error && (
         <div className="text-sm text-rose-300">{error}</div>
       )}
+
+      {/* Idea by VOID credit */}
+      <div className="mt-8 w-full max-w-3xl">
+        <div className="relative overflow-hidden rounded-xl border border-indigo-500/20 bg-white/5 backdrop-blur-md quantum-lattice shadow-[0_0_0_1px_rgba(99,102,241,0.08),0_20px_60px_-15px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center gap-3 p-3 sm:p-4">
+            <a
+              href="https://x.com/voids_thoughts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative block"
+              aria-label="Visit @voids_thoughts on X"
+              title="@voids_thoughts on X"
+            >
+              <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full ring-2 ring-fuchsia-400/70 overflow-hidden recursive-orb">
+                <Image
+                  src="/void.jpg"
+                  alt="@voids_thoughts"
+                  fill
+                  sizes="48px"
+                  className="object-cover"
+                />
+              </div>
+              <span className="pointer-events-none absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full whitespace-nowrap rounded bg-black/60 px-2 py-1 text-[10px] text-cyan-100 opacity-0 shadow-[0_0_16px_rgba(34,211,238,0.25)] transition-opacity group-hover:opacity-100">
+                Visit @voids_thoughts <span className="ml-1 spin-slow">🌀</span>
+              </span>
+            </a>
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-wide text-indigo-200/70">Idea by</div>
+              <a
+                href="https://x.com/voids_thoughts"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="holo-link text-sm sm:text-base font-semibold text-fuchsia-300 hover:text-fuchsia-200"
+              >
+                @voids_thoughts
+              </a>
+              <div className="text-[11px] text-indigo-200/70">
+                quantum lattice recursion vibes <span className="spin-slow inline-block">🌀</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

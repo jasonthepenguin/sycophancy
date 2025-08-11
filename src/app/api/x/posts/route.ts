@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (!username) {
     return new Response(JSON.stringify({ error: "username is required" }), {
       status: 400,
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "cache-control": "private, no-store" },
     });
   }
 
@@ -23,11 +23,12 @@ export async function GET(request: NextRequest) {
   );
 
   try {
+    const handle = username.replace(/^@/, "").trim().toLowerCase();
     // 1) Check cache first (serve immediately if present)
     const hasRedis =
       Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
       Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
-    const cacheKey = `cache:xposts:${username}:${maxResults}`;
+    const cacheKey = `cache:xposts:${handle}:${maxResults}`;
     let redis: ReturnType<typeof getRedis> | null = null;
     if (hasRedis) {
       redis = getRedis();
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
           headers: {
             "content-type": "application/json",
             "x-cache": "HIT",
+            "cache-control": "public, s-maxage=3600, stale-while-revalidate=60",
           },
         });
       }
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
         headers: { "content-type": "application/json" },
       });
     }
-
+  
     // 3) Check upstream cooldown only on cache miss
     if (hasRedis && redis) {
       const cooldownKey = `cooldown:x:v2UserTimeline`;
@@ -73,6 +75,7 @@ export async function GET(request: NextRequest) {
             headers: {
               "content-type": "application/json",
               "retry-after": String(cooldownSeconds),
+              "cache-control": "private, no-store",
             },
           }
         );
@@ -80,17 +83,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Per-username rate limit (tighter) to avoid hammering a single handle
-    const userLimit = await getUsernameLimiter().limit(username);
+    const userLimit = await getUsernameLimiter().limit(handle);
     if (!userLimit.success) {
       return new Response(JSON.stringify({ error: "Too many requests for this username" }), {
         status: 429,
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "cache-control": "private, no-store" },
       });
     }
     const client = getXReadOnlyClient();
 
     // Lookup user by username to get user id
-    const user = await client.v2.userByUsername(username, {
+    const user = await client.v2.userByUsername(handle, {
       "user.fields": [
         "id",
         "name",
@@ -104,7 +107,7 @@ export async function GET(request: NextRequest) {
     if (!user || !user.data?.id) {
       return new Response(JSON.stringify({ error: "user not found" }), {
         status: 404,
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "cache-control": "private, no-store" },
       });
     }
 
@@ -112,7 +115,7 @@ export async function GET(request: NextRequest) {
     if (hasRedis && redis && user.data.profile_image_url) {
       const profileUrl = user.data.profile_image_url;
       await Promise.all([
-        redis.set(`user:profileImageUrl:${username}`, profileUrl, { ex: 60 * 60 * 24 }),
+        redis.set(`user:profileImageUrl:${handle}`, profileUrl, { ex: 60 * 60 * 24 }),
         redis.set(`user:profileImageUrlById:${user.data.id}`, profileUrl, { ex: 60 * 60 * 24 }),
       ]);
     }
@@ -150,7 +153,11 @@ export async function GET(request: NextRequest) {
 
     return new Response(body, {
       status: 200,
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "x-cache": "MISS",
+        "cache-control": "public, s-maxage=3600, stale-while-revalidate=60",
+      },
     });
   } catch (error: unknown) {
     if (error instanceof ApiResponseError && error.code === 429) {
@@ -184,6 +191,7 @@ export async function GET(request: NextRequest) {
             "content-type": "application/json",
             "retry-after": String(retryAfterSeconds),
             "x-upstream-rate-limited": "true",
+            "cache-control": "private, no-store",
           },
         }
       );
@@ -193,7 +201,7 @@ export async function GET(request: NextRequest) {
       error instanceof Error ? error.message : "Unexpected error fetching posts";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "cache-control": "private, no-store" },
     });
   }
 }

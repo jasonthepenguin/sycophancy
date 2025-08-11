@@ -133,12 +133,22 @@ export async function GET(request: NextRequest) {
 
     // Call OpenAI to estimate IQ from latest tweet
     const openai = getOpenAIClient();
-    const system = "You are an intentionally cheeky but harmless IQ estimator. Always reply with only compact JSON.";
-    const userPrompt = `Given this user's latest post, return ONLY a JSON object with two fields:\n` +
+    const system = [
+      "You are an intentionally cheeky but harmless IQ estimator.",
+      "Always reply with only compact JSON.",
+      "Produce an IQ that is specific to the given post; do not default to common mid-high anchors (e.g., 125).",
+      "Prefer non-round numbers when in doubt; only output 125 if the content clearly warrants that exact value."
+    ].join(" ");
+    const userPrompt =
+      `Given this user's latest post, return ONLY a JSON object with two fields:\n` +
       `{"iq": <integer 55-145>, "explanation": "a single short sentence of playful justification"}.\n` +
       `Constraints:\n` +
       `- "iq" must be an integer between 55 and 145 inclusive.\n` +
       `- Keep explanation under 120 characters.\n` +
+      `- Avoid multiples of 5 unless clearly justified by the content.\n` +
+      `- Do not overuse the 115–130 band; spread scores across the range when justified.\n` +
+      `- If several scores seem equally plausible, use this seed to break ties AWAY from 125 by ±1–3: SEED=${latest.id}.\n` +
+      `Calibration rubric (consider all that apply): clarity, depth of reasoning, originality, factual rigor, humor/wit, linguistic complexity.\n` +
       `Latest post text (may include emojis/URLs):\n` +
       `"""${latest.text || ""}"""`;
 

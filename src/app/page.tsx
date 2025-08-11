@@ -307,12 +307,13 @@ export default function Home() {
           <button
             onClick={onFetch}
             disabled={loading || !username.trim()}
-            className={`rounded-md bg-gradient-to-r from-fuchsia-500 via-indigo-600 to-cyan-500 text-white px-4 py-2 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] hover:brightness-110 transition ${!username.trim() ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
+            aria-disabled={loading || !username.trim()}
+            className={"rounded-md bg-gradient-to-r from-fuchsia-500 via-indigo-600 to-cyan-500 text-white px-4 py-2 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] hover:brightness-110 transition"}
           >
             {loading ? (
               <span className="emoji-spin align-middle glow-cyan text-cyan-300">🌀</span>
             ) : (
-              "Plot"
+              "Check"
             )}
           </button>
         </div>

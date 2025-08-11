@@ -295,15 +295,17 @@ export default function Home() {
       {/* Input */}
       <div className="w-full max-w-md flex flex-col gap-2">
         <div className="flex items-center gap-2">
-        <input
-          className="flex-1 rounded-md border border-indigo-500/20 bg-white/5 text-indigo-50 placeholder:text-indigo-200/40 px-3 py-2 outline-none backdrop-blur focus:ring-2 focus:ring-fuchsia-400/50 focus:border-fuchsia-400/40"
-          placeholder="Enter X username (e.g. @sama)"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") onFetch();
-          }}
-        />
+          <div className="flex-1 flex flex-col">
+            <input
+              className="w-full rounded-md border border-indigo-500/20 bg-white/5 text-indigo-50 placeholder:text-indigo-200/40 px-3 py-2 outline-none backdrop-blur focus:ring-2 focus:ring-fuchsia-400/50 focus:border-fuchsia-400/40"
+              placeholder="Enter X username (e.g. @sama)"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onFetch();
+              }}
+            />
+          </div>
           <button
             onClick={onFetch}
             disabled={loading || !username.trim()}
@@ -387,6 +389,16 @@ export default function Home() {
             </a>
           </div>
         </div>
+      </div>
+      <div className="w-full max-w-3xl mt-2 text-center">
+        <a
+          href="https://www.voids-iq-test.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white/90 hover:text-fuchsia-200 underline underline-offset-2 decoration-fuchsia-400/30 hover:decoration-fuchsia-300 transition-colors text-xs sm:text-sm"
+        >
+          https://www.voids-iq-test.com/
+        </a>
       </div>
     </div>
   );

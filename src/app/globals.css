@@ -36,3 +36,88 @@ body {
   background-attachment: fixed, fixed, fixed;
 }
 
+/* ===== Void special effects ===== */
+.void-holy {
+  animation: holy-shake 0.9s ease-in-out infinite;
+}
+
+.void-holy::before {
+  content: "";
+  position: fixed;
+  inset: -10vh;
+  pointer-events: none;
+  background-image:
+    radial-gradient(600px 360px at 50% 25%, rgba(254, 252, 191, 0.16), transparent 60%),
+    radial-gradient(900px 540px at 50% 75%, rgba(250, 204, 21, 0.10), transparent 65%);
+  mix-blend-mode: screen;
+  filter: blur(6px);
+  animation: holy-breathe 2.4s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes holy-shake {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  15% { transform: translate3d(1px, -1px, 0) rotate(0.15deg); }
+  30% { transform: translate3d(-1px, 1px, 0) rotate(-0.15deg); }
+  45% { transform: translate3d(1.5px, 0.5px, 0) rotate(0.2deg); }
+  60% { transform: translate3d(-1px, -1.5px, 0) rotate(-0.2deg); }
+  75% { transform: translate3d(0.75px, 1px, 0) rotate(0.12deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+
+@keyframes holy-breathe {
+  0%, 100% { opacity: 0.35; filter: blur(10px) saturate(1.05); }
+  50% { opacity: 0.65; filter: blur(16px) saturate(1.25); }
+}
+
+/* Fire aura around profile dot */
+.void-fire {
+  box-shadow:
+    0 0 16px 6px rgba(255, 153, 0, 0.35),
+    0 0 28px 10px rgba(255, 77, 0, 0.22),
+    0 0 50px 18px rgba(255, 225, 0, 0.12),
+    inset 0 0 8px rgba(255, 255, 255, 0.15);
+  animation: fire-flicker 0.14s infinite alternate;
+}
+
+.void-fire::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 80, 0, 0.9),
+    rgba(255, 180, 0, 0.7),
+    rgba(255, 110, 0, 0.9)
+  );
+  filter: blur(8px) saturate(1.2);
+  z-index: -1;
+  animation: fire-rotate 1.6s linear infinite;
+}
+
+@keyframes fire-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fire-flicker {
+  0% { box-shadow: 0 0 16px 6px rgba(255, 153, 0, 0.35), 0 0 28px 10px rgba(255, 77, 0, 0.22), 0 0 50px 18px rgba(255, 225, 0, 0.12), inset 0 0 8px rgba(255, 255, 255, 0.15); }
+  100% { box-shadow: 0 0 20px 8px rgba(255, 180, 0, 0.45), 0 0 36px 14px rgba(255, 90, 0, 0.28), 0 0 64px 24px rgba(255, 235, 59, 0.16), inset 0 0 10px rgba(255, 255, 255, 0.22); }
+}
+
+/* Swirling emojis */
+.swirl-item {
+  will-change: transform, opacity;
+  animation: swirl 9.5s ease-in-out infinite;
+  text-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+@keyframes swirl {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(0.95); opacity: 0.55; }
+  25% { transform: translate3d(12px, -8px, 0) rotate(45deg) scale(1.05); opacity: 0.85; }
+  50% { transform: translate3d(-10px, 6px, 0) rotate(90deg) scale(1); opacity: 0.7; }
+  75% { transform: translate3d(8px, 10px, 0) rotate(225deg) scale(1.08); opacity: 0.9; }
+  100% { transform: translate3d(0, 0, 0) rotate(360deg) scale(0.95); opacity: 0.55; }
+}
+

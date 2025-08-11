@@ -33,6 +33,8 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [forcedIq, setForcedIq] = useState<number | null>(null);
+  const [isVoidMode, setIsVoidMode] = useState(false);
 
   // Chart constants and helpers
   const WIDTH = 800;
@@ -43,7 +45,7 @@ export default function Home() {
   const chartHeight = baselineY - chartTopY;
   const plotWidth = WIDTH - MARGIN.left - MARGIN.right;
   const IQ_MIN = 55;
-  const IQ_MAX = 145;
+  const IQ_MAX = isVoidMode ? 200 : 145;
   const IQ_RANGE = IQ_MAX - IQ_MIN;
   const MAX_PDF = 1 / Math.sqrt(2 * Math.PI);
 
@@ -71,14 +73,15 @@ export default function Home() {
       d += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
     }
     return d;
-  }, []);
+  }, [IQ_MIN, IQ_RANGE, plotWidth, baselineY, chartHeight, MAX_PDF, isVoidMode]);
 
-  const ticks = useMemo(() => [55, 70, 85, 100, 115, 130, 145], []);
+  const ticks = useMemo(() => (isVoidMode ? [55, 70, 85, 100, 115, 130, 145, 200] : [55, 70, 85, 100, 115, 130, 145]), [isVoidMode]);
 
   const iq = useMemo(() => {
+    if (forcedIq !== null) return forcedIq;
     if (!profile) return null;
     return randomIqFor(profile.username.toLowerCase());
-  }, [profile]);
+  }, [profile, forcedIq]);
 
   const marker = useMemo(() => {
     if (iq === null || !profile) return null;
@@ -92,6 +95,22 @@ export default function Home() {
     setLoading(true);
     setError(null);
     try {
+      // Special-case: @voids_thoughts → skip API, use local image and IQ 200
+      if (handle.toLowerCase() === "voids_thoughts") {
+        setIsVoidMode(true);
+        setForcedIq(200);
+        setProfile({
+          id: "void",
+          name: "Void",
+          username: "voids_thoughts",
+          profile_image_url: "/void.jpg",
+        });
+        return;
+      } else {
+        setIsVoidMode(false);
+        setForcedIq(null);
+      }
+
       const res = await fetch(`/api/x/profile?username=${encodeURIComponent(handle)}`);
       const json = await res.json();
       if (!res.ok) {
@@ -107,10 +126,31 @@ export default function Home() {
   }, [username]);
 
   return (
-    <div className="relative z-10 min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-6 -mt-8 sm:-mt-12">
+    <div className={`relative z-10 min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-6 -mt-8 sm:-mt-12 ${isVoidMode ? "void-holy" : ""}` }>
       <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-cyan-300 drop-shadow-[0_0_12px_rgba(99,102,241,0.35)]">
         Voids Thought Test
       </h1>
+
+      {isVoidMode && (
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          {Array.from({ length: 24 }).map((_, i) => {
+            const t = i / 24;
+            const left = Math.round(((Math.sin(12.9898 * (i + 1)) * 43758.5453) % 1 + 1) % 1 * 100);
+            const top = Math.round(((Math.sin(78.233 * (i + 5)) * 12345.678) % 1 + 1) % 1 * 100);
+            const delay = (i % 12) * 0.2;
+            const size = 18 + ((i * 13) % 18);
+            return (
+              <span
+                key={i}
+                className="absolute select-none text-indigo-200/70 swirl-item"
+                style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s`, fontSize: `${size}px` }}
+              >
+                🌀
+              </span>
+            );
+          })}
+        </div>
+      )}
 
       {/* Bell Curve Chart */}
       <div className="w-full max-w-3xl">
@@ -203,7 +243,7 @@ export default function Home() {
                     transform: "translate(-50%, -50%)",
                   }}
                 >
-                  <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full ring-2 ring-fuchsia-400/70 overflow-hidden shadow-[0_0_20px_rgba(232,121,249,0.35)]">
+                  <div className={`relative h-10 w-10 sm:h-12 sm:w-12 rounded-full ring-2 ring-fuchsia-400/70 overflow-hidden shadow-[0_0_20px_rgba(232,121,249,0.35)] ${isVoidMode ? "void-fire" : ""}`}>
                     <Image
                       src={profile.profile_image_url.replace("_normal", "_400x400")}
                       alt={profile.username}

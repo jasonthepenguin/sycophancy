@@ -25,9 +25,15 @@ export async function GET(request: NextRequest) {
 
     if (hasRedis) {
       redis = getRedis();
-      const cached = await redis.get<string>(cacheKey);
+      const cached = await redis.get(cacheKey);
       if (cached) {
-        return new Response(cached, {
+        const body = typeof cached === "string" ? cached : JSON.stringify(cached);
+        try {
+          if (redis) {
+            await redis.set(cacheKey, body, { ex: 60 * 60 });
+          }
+        } catch {}
+        return new Response(body, {
           status: 200,
           headers: { "content-type": "application/json", "x-cache": "HIT" },
         });

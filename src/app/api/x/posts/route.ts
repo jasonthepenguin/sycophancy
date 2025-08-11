@@ -28,13 +28,18 @@ export async function GET(request: NextRequest) {
       Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
       Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
     const cacheKey = `cache:xposts:${username}:${maxResults}`;
-    let cached: string | null = null;
     let redis: ReturnType<typeof getRedis> | null = null;
     if (hasRedis) {
       redis = getRedis();
-      cached = await redis.get<string>(cacheKey);
-      if (cached) {
-        return new Response(cached, {
+      const raw = await redis.get(cacheKey);
+      if (raw) {
+        const body = typeof raw === "string" ? raw : JSON.stringify(raw);
+        try {
+          if (redis) {
+            await redis.set(cacheKey, body, { ex: 60 * 60 });
+          }
+        } catch {}
+        return new Response(body, {
           status: 200,
           headers: {
             "content-type": "application/json",

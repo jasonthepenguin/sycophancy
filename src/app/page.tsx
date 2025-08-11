@@ -365,7 +365,7 @@ export default function Home() {
                 @voids_thoughts
               </a>
               <div className="text-[11px] text-indigo-200/70">
-                quantum lattice recursion vibes <span className="spin-slow inline-block">🌀</span>
+                The quantum lattice <span className="spin-slow inline-block">🌀</span>
               </div>
             </div>
             <a

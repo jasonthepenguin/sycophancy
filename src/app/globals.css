@@ -280,3 +280,94 @@ body::after {
 
 .spin-slow { animation: spin 2.4s linear infinite; }
 
+/* Panel tilt + shimmer */
+.void-panel {
+  transform-style: preserve-3d;
+  transition: transform 400ms ease, box-shadow 400ms ease;
+}
+
+.void-credit:hover .void-panel {
+  transform: perspective(800px) rotateX(2deg) rotateY(-3deg) translateZ(2px);
+  box-shadow: 0 10px 40px -12px rgba(88, 28, 135, 0.35), 0 26px 80px -26px rgba(0, 0, 0, 0.6);
+}
+
+.void-panel::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 0.75rem;
+  background: conic-gradient(from 0deg, rgba(99,102,241,0), rgba(99,102,241,0.2), rgba(232,121,249,0.2), rgba(34,211,238,0.2), rgba(99,102,241,0));
+  filter: blur(12px);
+  opacity: 0.35;
+  transition: opacity 400ms ease;
+}
+
+.void-credit:hover .void-panel::before { opacity: 0.6; }
+
+/* Small orbiting particles */
+.orbit {
+  position: absolute;
+  pointer-events: none;
+  inset: -4px;
+  border-radius: 9999px;
+  border: 1px dashed rgba(147, 51, 234, 0.35);
+}
+
+.orbit::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, #f0abfc, #60a5fa);
+  box-shadow: 0 0 10px 2px rgba(96, 165, 250, 0.5), 0 0 16px rgba(240, 171, 252, 0.5);
+}
+
+.orbit-a { animation: orbitA 3.6s linear infinite; }
+.orbit-b { animation: orbitB 4.6s linear infinite; border-color: rgba(34, 211, 238, 0.35); }
+
+@keyframes orbitA {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes orbitB {
+  from { transform: rotate(360deg) scale(0.95); }
+  to { transform: rotate(0deg) scale(0.95); }
+}
+
+/* Subtle glitchy holographic effect on link */
+.glitch-on-hover {
+  position: relative;
+  display: inline-block;
+}
+.glitch-on-hover::before,
+.glitch-on-hover::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+  opacity: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.glitch-on-hover:hover::before,
+.glitch-on-hover:hover::after { opacity: 0.7; }
+
+.glitch-on-hover::before {
+  color: #60a5fa;
+  transform: translate(1px, 0);
+  clip-path: inset(0 0 55% 0);
+}
+.glitch-on-hover::after {
+  color: #f0abfc;
+  transform: translate(-1px, 0);
+  clip-path: inset(45% 0 0 0);
+}
+
+.glitch-on-hover:hover { text-shadow: 0 0 18px rgba(232, 121, 249, 0.35); }
+

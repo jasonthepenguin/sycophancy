@@ -213,6 +213,22 @@ export default function Home() {
         </div>
       </div>
 
+      {profile && iq !== null && (
+        <div className="w-full max-w-3xl text-center mt-2">
+          <p className="text-base sm:text-lg">
+            <a
+              href={`https://x.com/${profile.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-indigo-600 hover:text-indigo-700 underline underline-offset-2"
+            >
+              @{profile.username}
+            </a>
+            , Your IQ: <span className="font-semibold text-indigo-600">{iq}</span>
+          </p>
+        </div>
+      )}
+
       {/* Input */}
       <div className="w-full max-w-md flex items-center gap-2">
         <input

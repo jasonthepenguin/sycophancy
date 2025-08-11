@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useCallback, useMemo, useState } from "react";
-import BellCurveChart from "@/components/BellCurveChart";
 
 type Profile = {
   id: string;
@@ -40,9 +39,6 @@ export default function Home() {
     return randomIqFor(profile.username.toLowerCase());
   }, [profile]);
 
-  const x = useMemo(() => (iq ? Math.max(55, Math.min(145, iq)) : 100), [iq]);
-  const positionPercent = useMemo(() => ((x - 55) / (145 - 55)) * 100, [x]);
-
   const onFetch = useCallback(async () => {
     const handle = username.replace(/^@/, "").trim();
     if (!handle) return;
@@ -64,39 +60,29 @@ export default function Home() {
   }, [username]);
 
   return (
-    <div className="min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-8 -mt-8 sm:-mt-12">
+    <div className="min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-6 -mt-8 sm:-mt-12">
       <h1 className="text-2xl sm:text-3xl font-semibold">Voids Thought Test - IQ Checker</h1>
 
-      {/* Bell curve */}
-      <div className="relative w-full max-w-3xl bg-white dark:bg-zinc-900 rounded-lg border border-gray-200 dark:border-zinc-700 overflow-hidden min-h-[360px] sm:min-h-[400px] flex flex-col justify-end">
-        {/* Visible curve (uPlot) */}
-        <div className="w-full overflow-x-auto">
-          <div className="min-w-[720px]">
-            <BellCurveChart />
-          </div>
-        </div>
-
-        {/* Avatar plotted */}
-        {profile && iq !== null && profile.profile_image_url && (
-          <div
-            className="absolute bottom-7 -translate-x-1/2"
-            style={{ left: `${positionPercent}%` }}
-          >
-            <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-full ring-2 ring-indigo-500 overflow-hidden shadow-md">
+      {/* Result preview (no chart) */}
+      {profile && iq !== null && (
+        <div className="w-full max-w-md rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 flex items-center gap-3">
+          {profile.profile_image_url && (
+            <div className="relative h-12 w-12 rounded-full ring-2 ring-indigo-500 overflow-hidden">
               <Image
                 src={profile.profile_image_url.replace("_normal", "_400x400")}
                 alt={profile.username}
                 fill
-                sizes="56px"
+                sizes="48px"
                 className="object-cover"
               />
             </div>
-            <div className="mt-2 text-center text-xs text-gray-700 dark:text-gray-300">
-              @{profile.username} • IQ {iq}
-            </div>
+          )}
+          <div className="flex-1">
+            <div className="text-sm font-medium">@{profile.username}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-300">Random IQ: {iq}</div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Input */}
       <div className="w-full max-w-md flex items-center gap-2">

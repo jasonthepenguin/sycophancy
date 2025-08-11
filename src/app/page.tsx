@@ -139,7 +139,7 @@ export default function Home() {
   return (
     <div className={`relative z-10 min-h-screen p-6 sm:p-10 flex flex-col items-center justify-center gap-6 -mt-8 sm:-mt-12 ${isVoidMode ? "void-holy" : ""}` }>
       <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-cyan-300 drop-shadow-[0_0_12px_rgba(99,102,241,0.35)]">
-        Voids Thought Test
+        Voids Thoughts IQ Test
       </h1>
       <div className="mt-1 text-white">
         <span className="text-sm sm:text-base">Check the IQ of any X user.</span>
@@ -353,7 +353,7 @@ export default function Home() {
                 Visit @voids_thoughts <span className="ml-1 spin-slow">🌀</span>
               </span>
             </a>
-            <div className="min-w-0">
+            <div className="flex-1 min-w-0">
               <div className="text-[11px] uppercase tracking-wide text-indigo-200/70">Idea by</div>
               <a
                 href="https://x.com/voids_thoughts"
@@ -368,6 +368,23 @@ export default function Home() {
                 quantum lattice recursion vibes <span className="spin-slow inline-block">🌀</span>
               </div>
             </div>
+            <a
+              href="https://x.com/voids_thoughts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group ml-auto"
+              aria-label="Follow on X"
+            >
+              <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-black border border-white/20 transition-all hover:bg-gray-900 hover:border-fuchsia-400/40 hover:shadow-[0_0_20px_rgba(232,121,249,0.25)]">
+                <Image
+                  src="/x-logo.svg"
+                  alt="X"
+                  width={20}
+                  height={20}
+                  className="brightness-0 invert opacity-90 group-hover:opacity-100 transition-opacity"
+                />
+              </div>
+            </a>
           </div>
         </div>
       </div>

@@ -114,21 +114,14 @@ export default function Home() {
         setServerIq(null);
       }
 
-      const res = await fetch(`/api/x/profile?username=${encodeURIComponent(handle)}`);
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json?.error || "Failed to fetch profile");
-      }
-      setProfile(json.user);
-
-      // Fetch IQ from server based on latest post
+      // Single call: IQ returns the user info too and hydrates profile cache
       try {
         const iqRes = await fetch(`/api/x/iq?username=${encodeURIComponent(handle)}`);
         const iqJson = await iqRes.json();
-        if (iqRes.ok && typeof iqJson?.iq === "number") {
-          setServerIq(iqJson.iq);
-        } else if (!iqRes.ok) {
-          // Graceful: keep fallback IQ, but surface an error message
+        if (iqRes.ok) {
+          if (iqJson?.user) setProfile(iqJson.user);
+          if (typeof iqJson?.iq === "number") setServerIq(iqJson.iq);
+        } else {
           if (iqJson?.error) setError(iqJson.error);
         }
       } catch {

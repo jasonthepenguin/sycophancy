@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   const maxResults = Math.min(
-    Math.max(Number(maxResultsParam ?? 25), 5),
+    Math.max(Number(maxResultsParam ?? 25), 10),
     100
   );
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
   
     // 3) Check upstream cooldown only on cache miss
     if (hasRedis && redis) {
-      const cooldownKey = `cooldown:x:v2UserTimeline`;
+      const cooldownKey = `cooldown:x:v2TweetsSearchRecent`;
       const cooldownSeconds = await redis.get<number>(cooldownKey);
       if (cooldownSeconds && cooldownSeconds > 0) {
         return new Response(
@@ -103,39 +103,15 @@ export async function GET(request: NextRequest) {
 
     const client = getXReadOnlyClient();
 
-    // Lookup user by username to get user id
-    const user = await client.v2.userByUsername(handle, {
-      "user.fields": [
-        "id",
-        "name",
-        "username",
-        "verified",
-        "public_metrics",
-        "profile_image_url",
-      ],
-    });
-
-    if (!user || !user.data?.id) {
-      return new Response(JSON.stringify({ error: "user not found" }), {
-        status: 404,
-        headers: { "content-type": "application/json", "cache-control": "private, no-store" },
-      });
-    }
-
-    // Store profile image URL in Redis for 24h for reuse across the app
-    if (hasRedis && redis && user.data.profile_image_url) {
-      const profileUrl = user.data.profile_image_url;
-      await Promise.all([
-        redis.set(`user:profileImageUrl:${handle}`, profileUrl, { ex: 60 * 60 * 24 }),
-        redis.set(`user:profileImageUrlById:${user.data.id}`, profileUrl, { ex: 60 * 60 * 24 }),
-      ]);
-    }
-
-    // Fetch recent tweets from the user timeline
-    const timeline = await client.v2.userTimeline(user.data.id, {
+    // Use Recent Search (more favorable limits on Basic). One call returns tweets and author.
+    const query = `from:${handle} -is:retweet -is:reply`;
+    const search = await client.v2.search(query, {
       max_results: maxResults,
-      exclude: ["replies"],
-      expansions: ["attachments.media_keys", "referenced_tweets.id"],
+      expansions: [
+        "attachments.media_keys",
+        "referenced_tweets.id",
+        "author_id",
+      ],
       "tweet.fields": [
         "id",
         "text",
@@ -146,13 +122,29 @@ export async function GET(request: NextRequest) {
         "referenced_tweets",
       ],
       "media.fields": ["media_key", "type", "url", "preview_image_url"],
+      "user.fields": [
+        "id",
+        "name",
+        "username",
+        "verified",
+        "public_metrics",
+        "profile_image_url",
+      ],
     });
 
+    const author = search.includes?.users?.[0];
+    if (hasRedis && redis && author?.profile_image_url) {
+      await Promise.all([
+        redis.set(`user:profileImageUrl:${handle}`, author.profile_image_url, { ex: 60 * 60 * 24 }),
+        author.id ? redis.set(`user:profileImageUrlById:${author.id}`, author.profile_image_url, { ex: 60 * 60 * 24 }) : Promise.resolve(),
+      ]);
+    }
+
     const data = {
-      user: user.data,
-      tweets: timeline.tweets,
-      meta: timeline.meta,
-      includes: timeline.includes,
+      user: author ?? { id: undefined, name: undefined, username: handle },
+      tweets: search.tweets,
+      meta: search.meta,
+      includes: search.includes,
     };
 
     const body = JSON.stringify(data);
@@ -188,7 +180,7 @@ export async function GET(request: NextRequest) {
       if (hasRedis) {
         try {
           const redis = getRedis();
-          await redis.set("cooldown:x:v2UserTimeline", retryAfterSeconds, {
+          await redis.set("cooldown:x:v2TweetsSearchRecent", retryAfterSeconds, {
             ex: retryAfterSeconds,
           });
         } catch {}

@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
       },
     });
   }
-
+  
+  let lastEndpoint: "search" | "userLookup" | undefined;
   try {
     const handle = username.replace(/^@/, "").trim().toLowerCase();
     const hasRedis =
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (hasRedis && redis) {
-      const cooldownKey = `cooldown:x:v2UserLookup`;
+      const cooldownKey = `cooldown:x:v2TweetsSearchRecent`;
       const cooldownSeconds = await redis.get<number>(cooldownKey);
       if (cooldownSeconds && cooldownSeconds > 0) {
         return new Response(
@@ -78,6 +79,7 @@ export async function GET(request: NextRequest) {
             headers: {
               "content-type": "application/json",
               "retry-after": String(cooldownSeconds),
+              "cache-control": "private, no-store",
             },
           }
         );
@@ -94,6 +96,58 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Prefer Recent Search to hydrate author without hitting user lookup caps
+    lastEndpoint = "search";
+    const query = `from:${handle} -is:retweet -is:reply`;
+    const search = await client.v2.search(query, {
+      max_results: 10,
+      expansions: ["author_id"],
+      "user.fields": [
+        "id",
+        "name",
+        "username",
+        "verified",
+        "profile_image_url",
+        "public_metrics",
+      ],
+    });
+
+    const author = search.includes?.users?.[0];
+    if (author) {
+      const body = JSON.stringify({ user: author });
+      if (hasRedis && redis) {
+        await redis.set(cacheKey, body, { ex: 60 * 60 });
+      }
+      return new Response(body, {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "x-cache": "MISS",
+          "cache-control": "public, s-maxage=3600, stale-while-revalidate=60",
+        },
+      });
+    }
+
+    // Fallback: if no recent tweets or protected, use user lookup
+    if (hasRedis && redis) {
+      const cooldownKeyLookup = `cooldown:x:v2UserLookup`;
+      const cooldownSecondsLookup = await redis.get<number>(cooldownKeyLookup);
+      if (cooldownSecondsLookup && cooldownSecondsLookup > 0) {
+        return new Response(
+          JSON.stringify({ error: "Upstream X API temporarily rate limited. Please retry later." }),
+          {
+            status: 429,
+            headers: {
+              "content-type": "application/json",
+              "retry-after": String(cooldownSecondsLookup),
+              "cache-control": "private, no-store",
+            },
+          }
+        );
+      }
+    }
+
+    lastEndpoint = "userLookup";
     const resp = await client.v2.userByUsername(handle, {
       "user.fields": [
         "id",
@@ -112,20 +166,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const body = JSON.stringify({ user: resp.data });
-
-    if (hasRedis && redis) {
-      await redis.set(cacheKey, body, { ex: 60 * 60 });
+    {
+      const body = JSON.stringify({ user: resp.data });
+      if (hasRedis && redis) {
+        await redis.set(cacheKey, body, { ex: 60 * 60 });
+      }
+      return new Response(body, {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+          "x-cache": "MISS",
+          "cache-control": "public, s-maxage=3600, stale-while-revalidate=60",
+        },
+      });
     }
-
-    return new Response(body, {
-      status: 200,
-      headers: {
-        "content-type": "application/json",
-        "x-cache": "MISS",
-        "cache-control": "public, s-maxage=3600, stale-while-revalidate=60",
-      },
-    });
   } catch (error: unknown) {
     if (error instanceof ApiResponseError && error.code === 429) {
       const hasRedis =
@@ -142,7 +196,10 @@ export async function GET(request: NextRequest) {
       if (hasRedis) {
         try {
           const redis = getRedis();
-          await redis.set("cooldown:x:v2UserLookup", retryAfterSeconds, { ex: retryAfterSeconds });
+          const key = (typeof lastEndpoint !== "undefined" && lastEndpoint === "search")
+            ? "cooldown:x:v2TweetsSearchRecent"
+            : "cooldown:x:v2UserLookup";
+          await redis.set(key, retryAfterSeconds, { ex: retryAfterSeconds });
         } catch {}
       }
       return new Response(

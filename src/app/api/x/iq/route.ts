@@ -76,9 +76,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Check upstream cooldown (shared with timeline usage)
+    // Check upstream cooldown (shared with search usage)
     if (hasRedis && redis) {
-      const cooldownKey = `cooldown:x:v2UserTimeline`;
+      const cooldownKey = `cooldown:x:v2TweetsSearchRecent`;
       const cooldownSeconds = await redis.get<number>(cooldownKey);
       if (cooldownSeconds && cooldownSeconds > 0) {
         return new Response(
@@ -97,26 +97,16 @@ export async function GET(request: NextRequest) {
 
     const client = getXReadOnlyClient();
 
-    // Lookup user id
-    const user = await client.v2.userByUsername(handle, {
+    // Use Recent Search to get latest original tweet and author in a single call
+    const query = `from:${handle} -is:retweet -is:reply`;
+    const search = await client.v2.search(query, {
+      max_results: 10,
+      expansions: ["author_id", "referenced_tweets.id"],
+      "tweet.fields": ["id", "text", "created_at", "lang", "public_metrics"],
       "user.fields": ["id", "name", "username", "profile_image_url", "public_metrics"],
     });
-    if (!user || !user.data?.id) {
-      return new Response(JSON.stringify({ error: "user not found" }), {
-        status: 404,
-        headers: { "content-type": "application/json", "cache-control": "private, no-store" },
-      });
-    }
 
-    // Get latest original tweet (exclude replies/retweets)
-    const timeline = await client.v2.userTimeline(user.data.id, {
-      max_results: 5,
-      exclude: ["replies", "retweets"],
-      expansions: ["referenced_tweets.id"],
-      "tweet.fields": ["id", "text", "created_at", "lang", "public_metrics"],
-    });
-
-    const latest = timeline.tweets?.[0];
+    const latest = search.tweets?.[0];
     if (!latest) {
       return new Response(JSON.stringify({ error: "no recent posts" }), {
         status: 404,
@@ -124,6 +114,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const author = search.includes?.users?.[0];
     const cacheKey = `cache:iq:${handle}:${latest.id}`;
     if (hasRedis && redis) {
       const cached = await redis.get(cacheKey);
@@ -192,7 +183,12 @@ export async function GET(request: NextRequest) {
     }
 
     const bodyObj = {
-      user: { id: user.data.id, username: user.data.username },
+      user: {
+        id: author?.id,
+        username: author?.username ?? handle,
+        name: author?.name ?? handle,
+        profile_image_url: author?.profile_image_url,
+      },
       tweet: { id: latest.id },
       iq,
       explanation,
@@ -205,6 +201,15 @@ export async function GET(request: NextRequest) {
       await Promise.all([
         redis.set(cacheKey, body, { ex: USER_CACHE_TTL_SECONDS }),
         redis.set(`cache:iq:latest:${handle}`, body, { ex: USER_CACHE_TTL_SECONDS }),
+        // Also hydrate profile cache so profile route is a fast hit after IQ
+        redis.set(`cache:xprofile:${handle}`, JSON.stringify({ user: bodyObj.user }), { ex: 60 * 60 }),
+        // Store profile image URL helpers for reuse elsewhere
+        author?.profile_image_url
+          ? redis.set(`user:profileImageUrl:${handle}`, author.profile_image_url, { ex: 60 * 60 * 24 })
+          : Promise.resolve(),
+        author?.id && author?.profile_image_url
+          ? redis.set(`user:profileImageUrlById:${author.id}`, author.profile_image_url, { ex: 60 * 60 * 24 })
+          : Promise.resolve(),
       ]);
     }
 
@@ -230,7 +235,7 @@ export async function GET(request: NextRequest) {
       if (hasRedis) {
         try {
           const redis = getRedis();
-          await redis.set("cooldown:x:v2UserTimeline", retryAfterSeconds, { ex: retryAfterSeconds });
+          await redis.set("cooldown:x:v2TweetsSearchRecent", retryAfterSeconds, { ex: retryAfterSeconds });
         } catch {}
       }
       return new Response(

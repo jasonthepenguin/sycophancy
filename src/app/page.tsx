@@ -34,6 +34,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [forcedIq, setForcedIq] = useState<number | null>(null);
+  const [serverIq, setServerIq] = useState<number | null>(null);
   const [isVoidMode, setIsVoidMode] = useState(false);
 
   // Chart constants and helpers
@@ -73,21 +74,21 @@ export default function Home() {
       d += i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
     }
     return d;
-  }, [IQ_MIN, IQ_RANGE, plotWidth, baselineY, chartHeight, MAX_PDF, isVoidMode]);
+  }, [IQ_MIN, IQ_RANGE, plotWidth, baselineY, chartHeight, MAX_PDF, isVoidMode, xyForIQ]);
 
   const ticks = useMemo(() => (isVoidMode ? [55, 70, 85, 100, 115, 130, 145, 200] : [55, 70, 85, 100, 115, 130, 145]), [isVoidMode]);
 
   const iq = useMemo(() => {
     if (forcedIq !== null) return forcedIq;
-    if (!profile) return null;
-    return randomIqFor(profile.username.toLowerCase());
-  }, [profile, forcedIq]);
+    if (serverIq !== null) return serverIq;
+    return null;
+  }, [forcedIq, serverIq]);
 
   const marker = useMemo(() => {
     if (iq === null || !profile) return null;
     const { x, y } = xyForIQ(iq);
     return { xPct: (x / WIDTH) * 100, yPct: (y / HEIGHT) * 100 };
-  }, [iq, profile]);
+  }, [iq, profile, xyForIQ]);
 
   const onFetch = useCallback(async () => {
     const handle = username.replace(/^@/, "").trim();
@@ -99,6 +100,7 @@ export default function Home() {
       if (handle.toLowerCase() === "voids_thoughts") {
         setIsVoidMode(true);
         setForcedIq(200);
+        setServerIq(null);
         setProfile({
           id: "void",
           name: "Void",
@@ -109,6 +111,7 @@ export default function Home() {
       } else {
         setIsVoidMode(false);
         setForcedIq(null);
+        setServerIq(null);
       }
 
       const res = await fetch(`/api/x/profile?username=${encodeURIComponent(handle)}`);
@@ -117,9 +120,24 @@ export default function Home() {
         throw new Error(json?.error || "Failed to fetch profile");
       }
       setProfile(json.user);
+
+      // Fetch IQ from server based on latest post
+      try {
+        const iqRes = await fetch(`/api/x/iq?username=${encodeURIComponent(handle)}`);
+        const iqJson = await iqRes.json();
+        if (iqRes.ok && typeof iqJson?.iq === "number") {
+          setServerIq(iqJson.iq);
+        } else if (!iqRes.ok) {
+          // Graceful: keep fallback IQ, but surface an error message
+          if (iqJson?.error) setError(iqJson.error);
+        }
+      } catch {
+        // Ignore, UI will wait for valid IQ
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
       setProfile(null);
+      setServerIq(null);
     } finally {
       setLoading(false);
     }
@@ -186,7 +204,7 @@ export default function Home() {
               />
 
               {/* Ticks */}
-              {ticks.map((t) => {
+           {ticks.map((t) => {
                 const tx = MARGIN.left + ((t - IQ_MIN) / IQ_RANGE) * plotWidth;
                 return (
                   <g key={t}>

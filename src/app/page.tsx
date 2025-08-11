@@ -153,7 +153,7 @@ export default function Home() {
                       x={tx}
                       y={baselineY + 20}
                       textAnchor="middle"
-                      className="fill-gray-500 text-[18px] sm:text-[12px]"
+                       className="fill-gray-500 text-[24px] sm:text-[18px]"
                     >
                       {t}
                     </text>

@@ -86,7 +86,14 @@ export async function GET(request: NextRequest) {
 
     // Lookup user by username to get user id
     const user = await client.v2.userByUsername(username, {
-      "user.fields": ["id", "name", "username", "verified", "public_metrics"],
+      "user.fields": [
+        "id",
+        "name",
+        "username",
+        "verified",
+        "public_metrics",
+        "profile_image_url",
+      ],
     });
 
     if (!user || !user.data?.id) {
@@ -94,6 +101,15 @@ export async function GET(request: NextRequest) {
         status: 404,
         headers: { "content-type": "application/json" },
       });
+    }
+
+    // Store profile image URL in Redis for 24h for reuse across the app
+    if (hasRedis && redis && user.data.profile_image_url) {
+      const profileUrl = user.data.profile_image_url;
+      await Promise.all([
+        redis.set(`user:profileImageUrl:${username}`, profileUrl, { ex: 60 * 60 * 24 }),
+        redis.set(`user:profileImageUrlById:${user.data.id}`, profileUrl, { ex: 60 * 60 * 24 }),
+      ]);
     }
 
     // Fetch recent tweets from the user timeline

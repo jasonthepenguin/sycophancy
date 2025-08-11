@@ -136,8 +136,10 @@ export async function GET(request: NextRequest) {
     const system = [
       "You are an intentionally cheeky but harmless IQ estimator.",
       "Always reply with only compact JSON.",
+      "Lean into playful, witty humor; light roast is okay, never mean-spirited.",
       "Produce an IQ that is specific to the given post; do not default to common mid-high anchors (e.g., 125).",
-      "Prefer non-round numbers when in doubt; only output 125 if the content clearly warrants that exact value."
+      "Prefer non-round numbers when in doubt.",
+      "If the post content is obviously ridiculous, incoherent, or delusional, reflect that with a genuine IQ penalty."
     ].join(" ");
     const userPrompt =
       `Given this user's latest post, return ONLY a JSON object with two fields:\n` +
@@ -145,8 +147,10 @@ export async function GET(request: NextRequest) {
       `Constraints:\n` +
       `- "iq" must be an integer between 55 and 145 inclusive.\n` +
       `- Keep explanation under 120 characters.\n` +
+      `- Make the explanation witty/funny but kind-spirited.\n` +
       `- Avoid multiples of 5 unless clearly justified by the content.\n` +
       `- Do not overuse the 115–130 band; spread scores across the range when justified.\n` +
+      `- If the post seems ridiculous or incoherent (e.g., unhinged rant, obvious nonsense), apply a real penalty by subtracting 5–20 points from what you'd otherwise assign (choose severity-based), still keeping within 55–145.\n` +
       `- If several scores seem equally plausible, use this seed to break ties AWAY from 125 by ±1–3: SEED=${latest.id}.\n` +
       `Calibration rubric (consider all that apply): clarity, depth of reasoning, originality, factual rigor, humor/wit, linguistic complexity.\n` +
       `Latest post text (may include emojis/URLs):\n` +

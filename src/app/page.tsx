@@ -141,6 +141,9 @@ export default function Home() {
       <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-fuchsia-300 to-cyan-300 drop-shadow-[0_0_12px_rgba(99,102,241,0.35)]">
         Voids Thought Test
       </h1>
+      <div className="mt-1 text-white">
+        <span className="text-sm sm:text-base">Check the IQ score of any X user.</span>
+      </div>
 
       {isVoidMode && (
         <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">

@@ -205,3 +205,18 @@ body::after {
   100% { transform: translate3d(0, 0, 0) rotate(360deg) scale(0.95); opacity: 0.55; }
 }
 
+/* Simple spin animation for loading emoji */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.emoji-spin {
+  display: inline-block;
+  animation: spin 0.9s linear infinite;
+}
+
+/* Cyan glow helper for emoji/text */
+.glow-cyan {
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.65), 0 0 16px rgba(99, 102, 241, 0.45);
+}
+

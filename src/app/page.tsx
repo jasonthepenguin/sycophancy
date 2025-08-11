@@ -293,7 +293,8 @@ export default function Home() {
       )}
 
       {/* Input */}
-      <div className="w-full max-w-md flex items-center gap-2">
+      <div className="w-full max-w-md flex flex-col gap-2">
+        <div className="flex items-center gap-2">
         <input
           className="flex-1 rounded-md border border-indigo-500/20 bg-white/5 text-indigo-50 placeholder:text-indigo-200/40 px-3 py-2 outline-none backdrop-blur focus:ring-2 focus:ring-fuchsia-400/50 focus:border-fuchsia-400/40"
           placeholder="Enter X username (e.g. @sama)"
@@ -303,13 +304,21 @@ export default function Home() {
             if (e.key === "Enter") onFetch();
           }}
         />
-        <button
-          onClick={onFetch}
-          disabled={loading || !username.trim()}
-          className="rounded-md bg-gradient-to-r from-fuchsia-500 via-indigo-600 to-cyan-500 text-white px-4 py-2 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] hover:brightness-110 disabled:opacity-50 disabled:grayscale transition"
-        >
-          {loading ? "Loading..." : "Plot"}
-        </button>
+          <button
+            onClick={onFetch}
+            disabled={loading || !username.trim()}
+            className={`rounded-md bg-gradient-to-r from-fuchsia-500 via-indigo-600 to-cyan-500 text-white px-4 py-2 shadow-[0_10px_30px_-10px_rgba(99,102,241,0.8)] hover:brightness-110 transition ${!username.trim() ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
+          >
+            {loading ? (
+              <span className="emoji-spin align-middle glow-cyan text-cyan-300">🌀</span>
+            ) : (
+              "Plot"
+            )}
+          </button>
+        </div>
+        {loading && (
+          <div className="text-sm text-cyan-200 glow-cyan pl-1">Loading...</div>
+        )}
       </div>
 
       {error && (
